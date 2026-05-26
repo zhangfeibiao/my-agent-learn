@@ -1,6 +1,7 @@
 package com.example.agentlearn.cli;
 
 import com.example.agentlearn.config.AppConfig;
+import com.example.agentlearn.rag.Indexer;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -10,15 +11,17 @@ public final class ConsoleSession {
     private final AppConfig config;
     private final InputStream input;
     private final PrintStream output;
+    private final Indexer indexer;
 
-    public ConsoleSession(AppConfig config, InputStream input, PrintStream output) {
+    public ConsoleSession(AppConfig config, InputStream input, PrintStream output, Indexer indexer) {
         this.config = config;
         this.input = input;
         this.output = output;
+        this.indexer = indexer;
     }
 
     public static ConsoleSession placeholder(AppConfig config) {
-        return new ConsoleSession(config, System.in, System.out);
+        return new ConsoleSession(config, System.in, System.out, null);
     }
 
     public void run() {
@@ -42,10 +45,23 @@ public final class ConsoleSession {
                 return;
             }
             if ("/index".equals(line)) {
-                output.println("Indexing is not wired yet. Next task will add it.");
+                rebuildIndex();
                 continue;
             }
             output.printf("Agent is not wired yet. Configured chat model: %s%n", config.chatModel());
+        }
+    }
+
+    private void rebuildIndex() {
+        if (indexer == null) {
+            output.println("Indexer is not configured.");
+            return;
+        }
+        try {
+            int count = indexer.rebuild(config.knowledgeDir());
+            output.printf("Indexed %d chunks into %s%n", count, config.vectorStorePath());
+        } catch (Exception e) {
+            output.println("Indexing failed: " + e.getMessage());
         }
     }
 }
