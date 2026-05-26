@@ -3,7 +3,9 @@ package com.example.agentlearn.agent;
 import com.example.agentlearn.TestSupport;
 import com.example.agentlearn.llm.ChatClient;
 import com.example.agentlearn.llm.ChatMessage;
-import com.example.agentlearn.llm.EmbeddingClient;
+import com.example.agentlearn.mcp.McpClient;
+import com.example.agentlearn.mcp.McpTool;
+import com.example.agentlearn.mcp.McpToolCallResult;
 import com.example.agentlearn.prompt.PromptComposer;
 import com.example.agentlearn.rag.JsonVectorStore;
 import com.example.agentlearn.rag.Retriever;
@@ -20,6 +22,7 @@ public final class AgentTest {
     public static void main(String[] args) throws Exception {
         includesSelectedSkillsAndRagContextInPrompt();
         treatsInvalidJsonModelOutputAsFinalAnswer();
+        executesOneMcpToolRoundBeforeFinalAnswer();
     }
 
     private static void includesSelectedSkillsAndRagContextInPrompt() throws Exception {
@@ -72,18 +75,59 @@ public final class AgentTest {
         TestSupport.assertEquals(answer.sources().size(), 0);
     }
 
-    private static final class CapturingChatClient implements ChatClient {
-        private final String response;
-        private final List<ChatMessage> messages = new ArrayList<>();
+    private static void executesOneMcpToolRoundBeforeFinalAnswer() throws Exception {
+        Path vectorFile = Files.createTempDirectory("agent").resolve("vector-store.json");
+        JsonVectorStore store = new JsonVectorStore(vectorFile);
+        store.save(List.of());
 
-        private CapturingChatClient(String response) {
-            this.response = response;
+        CapturingChatClient chat = new CapturingChatClient(
+                "{\"type\":\"mcp_tool_call\",\"tool\":\"list_knowledge_files\",\"arguments\":{}}",
+                "{\"type\":\"final\",\"answer\":\"Files: mcp.md\"}"
+        );
+        McpClient mcpClient = new McpClient() {
+            @Override
+            public List<McpTool> listTools() {
+                return List.of(new McpTool("list_knowledge_files", "List knowledge files"));
+            }
+
+            @Override
+            public McpToolCallResult callTool(String name, java.util.Map<String, Object> arguments) {
+                return new McpToolCallResult(true, "mcp.md");
+            }
+        };
+
+        Agent agent = new Agent(
+                chat,
+                text -> List.of(0.0),
+                new Retriever(store),
+                new SkillSelector(),
+                List.of(),
+                new PromptComposer("system"),
+                3,
+                mcpClient
+        );
+
+        AgentAnswer answer = agent.answer("列出知识库文件");
+
+        TestSupport.assertEquals(answer.answer(), "Files: mcp.md");
+        TestSupport.assertContains(chat.lastPrompt(), "mcp.md");
+    }
+
+    private static final class CapturingChatClient implements ChatClient {
+        private final List<String> responses;
+        private final List<ChatMessage> messages = new ArrayList<>();
+        private int calls;
+
+        private CapturingChatClient(String... responses) {
+            this.responses = List.of(responses);
         }
 
         @Override
         public String complete(List<ChatMessage> messages) {
             this.messages.clear();
             this.messages.addAll(messages);
+            String response = responses.get(Math.min(calls, responses.size() - 1));
+            calls++;
             return response;
         }
 

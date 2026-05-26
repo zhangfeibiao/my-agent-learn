@@ -3,6 +3,8 @@ package com.example.agentlearn.cli;
 import com.example.agentlearn.agent.Agent;
 import com.example.agentlearn.agent.AgentAnswer;
 import com.example.agentlearn.config.AppConfig;
+import com.example.agentlearn.mcp.McpClient;
+import com.example.agentlearn.mcp.McpTool;
 import com.example.agentlearn.rag.Indexer;
 
 import java.io.InputStream;
@@ -15,17 +17,19 @@ public final class ConsoleSession {
     private final PrintStream output;
     private final Indexer indexer;
     private final Agent agent;
+    private final McpClient mcpClient;
 
-    public ConsoleSession(AppConfig config, InputStream input, PrintStream output, Indexer indexer, Agent agent) {
+    public ConsoleSession(AppConfig config, InputStream input, PrintStream output, Indexer indexer, Agent agent, McpClient mcpClient) {
         this.config = config;
         this.input = input;
         this.output = output;
         this.indexer = indexer;
         this.agent = agent;
+        this.mcpClient = mcpClient;
     }
 
     public static ConsoleSession placeholder(AppConfig config) {
-        return new ConsoleSession(config, System.in, System.out, null, null);
+        return new ConsoleSession(config, System.in, System.out, null, null, null);
     }
 
     public void run() {
@@ -52,6 +56,10 @@ public final class ConsoleSession {
                 rebuildIndex();
                 continue;
             }
+            if ("/mcp-tools".equals(line)) {
+                printMcpTools();
+                continue;
+            }
             answer(line);
         }
     }
@@ -66,6 +74,20 @@ public final class ConsoleSession {
             output.printf("Indexed %d chunks into %s%n", count, config.vectorStorePath());
         } catch (Exception e) {
             output.println("Indexing failed: " + e.getMessage());
+        }
+    }
+
+    private void printMcpTools() {
+        if (mcpClient == null) {
+            output.println("MCP client is not configured.");
+            return;
+        }
+        try {
+            for (McpTool tool : mcpClient.listTools()) {
+                output.printf("- %s: %s%n", tool.name(), tool.description());
+            }
+        } catch (Exception e) {
+            output.println("MCP tools failed: " + e.getMessage());
         }
     }
 

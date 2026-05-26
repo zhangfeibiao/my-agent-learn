@@ -4,6 +4,8 @@ import com.example.agentlearn.agent.Agent;
 import com.example.agentlearn.config.AppConfig;
 import com.example.agentlearn.llm.OpenAiCompatibleChatClient;
 import com.example.agentlearn.llm.OpenAiCompatibleEmbeddingClient;
+import com.example.agentlearn.mcp.McpClient;
+import com.example.agentlearn.mcp.StdioMcpClient;
 import com.example.agentlearn.prompt.PromptComposer;
 import com.example.agentlearn.rag.Indexer;
 import com.example.agentlearn.rag.JsonVectorStore;
@@ -16,6 +18,7 @@ import com.example.agentlearn.skill.SkillSelector;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class Main {
@@ -36,6 +39,7 @@ public final class Main {
                 embeddingClient,
                 vectorStore
         );
+        McpClient mcpClient = createMcpClient(config);
         Agent agent = new Agent(
                 new OpenAiCompatibleChatClient(config.apiBaseUrl(), config.apiKey(), config.chatModel()),
                 embeddingClient,
@@ -43,10 +47,27 @@ public final class Main {
                 new SkillSelector(),
                 loadSkills(config),
                 new PromptComposer(loadSystemPrompt(config)),
-                4
+                4,
+                mcpClient
         );
-        ConsoleSession session = new ConsoleSession(config, System.in, System.out, indexer, agent);
+        ConsoleSession session = new ConsoleSession(config, System.in, System.out, indexer, agent, mcpClient);
         session.run();
+    }
+
+    private static McpClient createMcpClient(AppConfig config) {
+        try {
+            String java = System.getProperty("java.home") + "/bin/java";
+            String classpath = System.getProperty("java.class.path");
+            List<String> command = new ArrayList<>();
+            command.add(java);
+            command.add("-cp");
+            command.add(classpath);
+            command.add("com.example.agentlearn.mcp.DemoMcpServer");
+            command.add(config.knowledgeDir().toString());
+            return new StdioMcpClient(command);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static List<AgentSkill> loadSkills(AppConfig config) {
