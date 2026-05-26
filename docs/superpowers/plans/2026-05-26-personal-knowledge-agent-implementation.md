@@ -2,17 +2,19 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the first working Java 21 CLI version of a local Markdown personal knowledge agent with Prompt templates, SKILL.md-only Agent Skills, lightweight RAG, and a minimal MCP demo.
+**Goal:** Build the first working Java 17 CLI version of a local Markdown personal knowledge agent with Prompt templates, SKILL.md-only Agent Skills, lightweight RAG, and a minimal MCP demo.
 
 **Architecture:** The implementation keeps each agent concept in a small package: `cli` owns the terminal loop, `agent` coordinates one-turn execution, `prompt` renders Markdown templates, `skill` loads and selects Agent Skills, `rag` handles document indexing and similarity search, `llm` wraps OpenAI-compatible APIs, and `mcp` wraps stdio JSON-RPC tool calls. Tests use fakes around LLM and MCP boundaries so the core can be verified without network calls.
 
-**Tech Stack:** Java 21, Maven, JDK `HttpClient`, Jackson, JUnit 5, AssertJ.
+**Tech Stack:** Java 17, JDK `HttpClient`, JDK-only compile/test scripts, lightweight project `pom.xml`, no external runtime dependencies.
 
 ---
 
 ## File Structure
 
-- Create `pom.xml`: Maven Java 21 build, dependencies, test plugins, executable jar config.
+- Create `pom.xml`: lightweight Java project descriptor.
+- Create `scripts/test.sh`: compile and run `*Test` classes with JDK tools.
+- Create `scripts/package.sh`: compile and package an executable jar with JDK tools.
 - Create `src/main/java/com/example/agentlearn/cli/Main.java`: CLI entrypoint.
 - Create `src/main/java/com/example/agentlearn/cli/ConsoleSession.java`: REPL loop and slash commands.
 - Create `src/main/java/com/example/agentlearn/config/AppConfig.java`: environment and properties configuration.
@@ -47,7 +49,7 @@
 
 ---
 
-### Task 1: Maven Skeleton and CLI Shell
+### Task 1: Java Skeleton and CLI Shell
 
 **Files:**
 - Create: `pom.xml`
@@ -86,13 +88,13 @@ class AppConfigTest {
 
 - [ ] **Step 2: Run the test and verify it fails**
 
-Run: `mvn test -Dtest=AppConfigTest`
+Run: `./scripts/test.sh`
 
-Expected: FAIL because `AppConfig` and the Maven project do not exist yet.
+Expected: FAIL because `AppConfig` and the Java project skeleton do not exist yet.
 
-- [ ] **Step 3: Add the Maven build and config class**
+- [ ] **Step 3: Add the Java build scripts and config class**
 
-Create `pom.xml` with Java 21, Jackson, JUnit 5, AssertJ, Surefire, and Shade plugin.
+Create `pom.xml`, `scripts/test.sh`, and `scripts/package.sh` with Java 17 settings and no external dependency requirement.
 
 Create `AppConfig` with:
 
@@ -124,11 +126,11 @@ public record AppConfig(
 }
 ```
 
-Create minimal `Main` and `ConsoleSession` so `mvn test` compiles. The CLI should print the banner, support `/exit`, and leave other commands as friendly placeholders until later tasks wire them up.
+Create minimal `Main` and `ConsoleSession` so `./scripts/test.sh` compiles. The CLI should print the banner, support `/exit`, and leave other commands as friendly placeholders until later tasks wire them up.
 
 - [ ] **Step 4: Run the test and verify it passes**
 
-Run: `mvn test -Dtest=AppConfigTest`
+Run: `./scripts/test.sh`
 
 Expected: PASS.
 
@@ -136,7 +138,7 @@ Expected: PASS.
 
 ```bash
 git add pom.xml src/main/java src/test/java
-git commit -m "feat: add Maven CLI skeleton"
+git commit -m "feat: add Java CLI skeleton"
 ```
 
 ---
@@ -174,7 +176,7 @@ assertThat(selected).extracting(AgentSkill::name).contains("markdown-qa");
 
 - [ ] **Step 2: Run tests and verify they fail**
 
-Run: `mvn test -Dtest=PromptRendererTest,SkillLoaderTest,SkillSelectorTest`
+Run: `./scripts/test.sh`
 
 Expected: FAIL because prompt and skill classes do not exist yet.
 
@@ -191,7 +193,7 @@ The selector should always include `markdown-qa` when `usesRag` is true, then in
 
 - [ ] **Step 4: Run tests and verify they pass**
 
-Run: `mvn test -Dtest=PromptRendererTest,SkillLoaderTest,SkillSelectorTest`
+Run: `./scripts/test.sh`
 
 Expected: PASS.
 
@@ -230,13 +232,13 @@ Write tests for:
 
 - [ ] **Step 2: Run tests and verify they fail**
 
-Run: `mvn test -Dtest=TextSplitterTest,JsonVectorStoreTest,CosineSimilarityTest`
+Run: `./scripts/test.sh`
 
 Expected: FAIL because RAG classes do not exist yet.
 
 - [ ] **Step 3: Implement RAG classes**
 
-Implement document loading with `Files.walk`, chunking by paragraph with a max character budget, JSON persistence with Jackson, and cosine similarity with zero-vector protection.
+Implement document loading with `Files.walk`, chunking by paragraph with a max character budget, JSON persistence with the local `Json` utility, and cosine similarity with zero-vector protection.
 
 Use immutable records:
 
@@ -248,7 +250,7 @@ public record VectorRecord(String id, Path source, String text, List<Double> emb
 
 - [ ] **Step 4: Run tests and verify they pass**
 
-Run: `mvn test -Dtest=TextSplitterTest,JsonVectorStoreTest,CosineSimilarityTest`
+Run: `./scripts/test.sh`
 
 Expected: PASS.
 
@@ -278,7 +280,7 @@ The test should create a temp `knowledge/agent.md`, use a fake `EmbeddingClient`
 
 - [ ] **Step 2: Run the test and verify it fails**
 
-Run: `mvn test -Dtest=IndexerTest`
+Run: `./scripts/test.sh`
 
 Expected: FAIL because LLM interfaces and `Indexer` do not exist yet.
 
@@ -295,7 +297,7 @@ Wire `/index` in `ConsoleSession` to rebuild the vector store.
 
 - [ ] **Step 4: Run the test and verify it passes**
 
-Run: `mvn test -Dtest=IndexerTest`
+Run: `./scripts/test.sh`
 
 Expected: PASS without network calls.
 
@@ -329,7 +331,7 @@ Use fake `ChatClient`, fake `Retriever`, and in-memory skills to assert:
 
 - [ ] **Step 2: Run tests and verify they fail**
 
-Run: `mvn test -Dtest=AgentTest`
+Run: `./scripts/test.sh`
 
 Expected: FAIL because agent classes do not exist yet.
 
@@ -345,7 +347,7 @@ Keep MCP optional in this task. Add the extension point but no stdio process yet
 
 - [ ] **Step 4: Run tests and verify they pass**
 
-Run: `mvn test -Dtest=AgentTest`
+Run: `./scripts/test.sh`
 
 Expected: PASS.
 
@@ -376,7 +378,7 @@ Assert JSON-RPC request/response serialization for `tools/list` and `tools/call`
 
 - [ ] **Step 2: Run tests and verify they fail**
 
-Run: `mvn test -Dtest=McpMessageTest`
+Run: `./scripts/test.sh`
 
 Expected: FAIL because MCP classes do not exist yet.
 
@@ -394,7 +396,7 @@ Allow one MCP call round when `ModelDirective` is `mcp_tool_call`.
 
 - [ ] **Step 4: Run tests and verify they pass**
 
-Run: `mvn test -Dtest=McpMessageTest`
+Run: `./scripts/test.sh`
 
 Expected: PASS.
 
@@ -429,13 +431,13 @@ Seed files should explain AI Agent, RAG, MCP, and Agent Skills in short Markdown
 
 - [ ] **Step 2: Run all tests**
 
-Run: `mvn test`
+Run: `./scripts/test.sh`
 
 Expected: PASS.
 
 - [ ] **Step 3: Run CLI help smoke check**
 
-Run: `mvn -q -DskipTests package`
+Run: `./scripts/package.sh`
 
 Expected: PASS and jar created under `target/`.
 

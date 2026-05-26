@@ -12,8 +12,8 @@ The project is intentionally educational. The code should expose the moving part
 
 ### In Scope
 
-- Java 21 CLI application.
-- Maven project structure.
+- Java 17 CLI application. Java 21 can be adopted later by changing the compile release.
+- Simple Java project structure with a lightweight `pom.xml` descriptor and JDK-only scripts.
 - OpenAI-compatible chat API client using JDK `HttpClient`.
 - OpenAI-compatible embedding API client using JDK `HttpClient`.
 - Local Markdown and text document loading from `knowledge/`.
@@ -24,7 +24,7 @@ The project is intentionally educational. The code should expose the moving part
 - Minimal skill selection based on skill description and user query.
 - Minimal MCP client over stdio JSON-RPC.
 - One tiny local MCP server for file-oriented demo tools.
-- Tests for core parsing, retrieval, prompt rendering, skill loading, and MCP message handling.
+- JDK-only tests for core parsing, retrieval, prompt rendering, skill loading, and MCP message handling.
 
 ### Out of Scope
 
@@ -359,7 +359,7 @@ Expected handling:
 
 ## 7. Testing Strategy
 
-Use focused unit tests for the educational core:
+Use focused JDK-only tests for the educational core. Test classes expose `main` methods and run through `scripts/test.sh`, which keeps the project independent from external test libraries.
 
 - `SkillLoaderTest`: parses front matter and body.
 - `SkillSelectorTest`: selects expected skills for sample queries.
@@ -406,8 +406,8 @@ prompts/
 
 ### Milestone 1: Project Skeleton
 
-- Create Maven Java 21 project.
-- Add Jackson and JUnit dependencies.
+- Create Java 17 project skeleton.
+- Add local compile, test, and package scripts.
 - Add package structure.
 - Add config loader.
 - Add CLI loop with `/exit`.
@@ -450,7 +450,8 @@ prompts/
 
 ## 10. Design Decisions
 
-- Use Java 21 and Maven because they are familiar and explicit.
+- Use Java 17 because it is available in the local environment and still supports records and JDK `HttpClient`.
+- Keep a lightweight `pom.xml` descriptor, but rely on JDK-only scripts for repeatable local verification.
 - Avoid Spring and LangChain4j so the learner can see the agent loop directly.
 - Use JSON vector storage because it is inspectable and lightweight.
 - Use brute-force vector search because it teaches similarity retrieval without database complexity.
