@@ -24,16 +24,19 @@
 
 ## Configure
 
-复制 `.env.example` 中的变量到你的 shell 环境，至少需要：
+复制 `.env.example` 为 `.env`，填入你的 API Key。`./scripts/run.sh` 会自动加载 `.env`：
 
 ```bash
-export AGENT_API_KEY=your-api-key
-export AGENT_API_BASE_URL=https://api.openai.com/v1
-export AGENT_CHAT_MODEL=gpt-4.1-mini
-export AGENT_EMBEDDING_MODEL=text-embedding-3-small
+cp .env.example .env
 ```
 
-这些 API 是 OpenAI-compatible 形式，也可以接兼容服务。
+默认示例使用硅基流动的 OpenAI-compatible API：
+
+```bash
+AGENT_API_BASE_URL=https://api.siliconflow.cn/v1
+AGENT_CHAT_MODEL=deepseek-ai/DeepSeek-V4-Flash
+AGENT_EMBEDDING_MODEL=netease-youdao/bce-embedding-base_v1
+```
 
 ## Run
 

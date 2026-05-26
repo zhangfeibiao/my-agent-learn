@@ -1,5 +1,6 @@
 .tools/
 .m2/
+.env
 target/
 data/vector-store.json
 .DS_Store
