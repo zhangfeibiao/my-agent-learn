@@ -47,7 +47,8 @@ AGENT_EMBEDDING_MODEL=netease-youdao/bce-embedding-base_v1
 
 CLI 命令：
 
-- `/index`：重建 `data/vector-store.json`。
+- `/index`：增量更新 `data/vector-store.json`，只对新增或修改文件重新 embedding。
+- `/reindex`：强制全量重建 `data/vector-store.json`。
 - `/mcp-tools`：列出 demo MCP server 暴露的工具。
 - `/exit`：退出。
 
@@ -55,10 +56,16 @@ CLI 命令：
 
 ```text
 > /index
-Indexed 4 chunks into data/vector-store.json
+Updated 4 chunks into data/vector-store.json
 
 > 什么是 Agent Skill？它和 MCP 有什么区别？
 ```
+
+## Incremental Indexing
+
+`/index` 会先读取旧的 `data/vector-store.json`。如果某个文件的 `sourceHash`、`embeddingModel` 和 `splitterVersion` 都没有变化，就直接复用旧 JSON 里的 embedding 向量；如果文件新增或修改，就重新切分并调用 embedding 模型；如果文件被删除，对应 records 会从新索引中移除。
+
+最后仍会整体重写一次 `data/vector-store.json`，但不会对未变化文件重复调用 embedding。
 
 ## Project Map
 

@@ -27,8 +27,11 @@ public final class JsonVectorStore {
             Map<String, Object> object = new LinkedHashMap<>();
             object.put("id", record.id());
             object.put("source", record.source().toString());
+            object.put("sourceHash", record.sourceHash());
             object.put("text", record.text());
             object.put("embedding", record.embedding());
+            object.put("embeddingModel", record.embeddingModel());
+            object.put("splitterVersion", record.splitterVersion());
             jsonRecords.add(object);
         }
         Files.writeString(path, Json.stringify(jsonRecords), StandardCharsets.UTF_8);
@@ -52,7 +55,10 @@ public final class JsonVectorStore {
             }
             String id = (String) map.get("id");
             String source = (String) map.get("source");
+            String sourceHash = stringValue(map.get("sourceHash"));
             String text = (String) map.get("text");
+            String embeddingModel = stringValue(map.get("embeddingModel"));
+            String splitterVersion = stringValue(map.get("splitterVersion"));
             List<Double> embedding = new ArrayList<>();
             Object rawEmbedding = map.get("embedding");
             if (rawEmbedding instanceof List<?> values) {
@@ -60,8 +66,12 @@ public final class JsonVectorStore {
                     embedding.add(((Number) value).doubleValue());
                 }
             }
-            records.add(new VectorRecord(id, Path.of(source), text, List.copyOf(embedding)));
+            records.add(new VectorRecord(id, Path.of(source), sourceHash, text, List.copyOf(embedding), embeddingModel, splitterVersion));
         }
         return List.copyOf(records);
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? "" : String.valueOf(value);
     }
 }

@@ -37,7 +37,9 @@ public final class Main {
                 new MarkdownDocumentLoader(),
                 new TextSplitter(1200),
                 embeddingClient,
-                vectorStore
+                vectorStore,
+                config.embeddingModel(),
+                Indexer.DEFAULT_SPLITTER_VERSION
         );
         McpClient mcpClient = createMcpClient(config);
         Agent agent = new Agent(
