@@ -3,6 +3,7 @@ package com.example.agentlearn.cli;
 import com.example.agentlearn.agent.Agent;
 import com.example.agentlearn.agent.AgentAnswer;
 import com.example.agentlearn.config.AppConfig;
+import com.example.agentlearn.llm.logging.LlmCallContext;
 import com.example.agentlearn.mcp.McpClient;
 import com.example.agentlearn.mcp.McpTool;
 import com.example.agentlearn.rag.IndexResult;
@@ -35,7 +36,7 @@ public final class ConsoleSession {
 
     public void run() {
         output.println("Personal Knowledge Agent");
-        output.println("Type /index to update the knowledge index, /reindex to rebuild it fully, /exit to quit.");
+        output.println("Type /help for commands, /index to update the knowledge index, /exit to quit.");
         output.println();
 
         Scanner scanner = new Scanner(input);
@@ -52,6 +53,10 @@ public final class ConsoleSession {
             if ("/exit".equals(line)) {
                 output.println("Bye.");
                 return;
+            }
+            if ("/help".equals(line)) {
+                output.print(HelpText.usage());
+                continue;
             }
             if ("/index".equals(line)) {
                 updateIndex();
@@ -75,7 +80,7 @@ public final class ConsoleSession {
             return;
         }
         try {
-            IndexResult result = indexer.rebuildIncremental(config.knowledgeDir());
+            IndexResult result = LlmCallContext.withNewSession(() -> indexer.rebuildIncremental(config.knowledgeDir()));
             printIndexResult("Updated", result);
         } catch (Exception e) {
             output.println("Indexing failed: " + e.getMessage());
@@ -88,7 +93,7 @@ public final class ConsoleSession {
             return;
         }
         try {
-            IndexResult result = indexer.rebuildFull(config.knowledgeDir());
+            IndexResult result = LlmCallContext.withNewSession(() -> indexer.rebuildFull(config.knowledgeDir()));
             printIndexResult("Rebuilt", result);
         } catch (Exception e) {
             output.println("Indexing failed: " + e.getMessage());
@@ -123,7 +128,7 @@ public final class ConsoleSession {
             return;
         }
         try {
-            AgentAnswer answer = agent.answer(line);
+            AgentAnswer answer = LlmCallContext.withNewSession(() -> agent.answer(line));
             output.println();
             output.println("Agent:");
             output.println(answer.answer());

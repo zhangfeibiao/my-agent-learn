@@ -10,4 +10,7 @@ mkdir -p target/classes
 
 MAIN_SOURCES="$(find src/main/java -name '*.java' | sort)"
 "$JAVAC" --release 17 -encoding UTF-8 -d target/classes $MAIN_SOURCES
+if [ -d src/main/resources ]; then
+  cp -R src/main/resources/. target/classes/
+fi
 "$JAR" --create --file target/personal-knowledge-agent.jar --main-class com.example.agentlearn.cli.Main -C target/classes .

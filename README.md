@@ -18,6 +18,7 @@
 ./scripts/test.sh
 ./scripts/package.sh
 ./scripts/run.sh
+./scripts/web.sh
 ```
 
 如果你的机器有 Java 21，也可以把 `pom.xml` 和脚本里的 release 从 17 调整到 21。
@@ -61,6 +62,39 @@ Updated 4 chunks into data/vector-store.json
 > 什么是 Agent Skill？它和 MCP 有什么区别？
 ```
 
+## Web UI
+
+第一版 Web UI 仍然不使用框架，后端用 JDK 自带 `HttpServer`，前端是原生 HTML/CSS/JS。
+
+```bash
+./scripts/web.sh
+```
+
+默认地址是 `http://127.0.0.1:8080/`。如果要换端口：
+
+```bash
+AGENT_WEB_PORT=18080 ./scripts/web.sh
+```
+
+当前 UI 支持：
+
+- 聊天会话：调用同一个 Agent 问答流程。
+- 知识库管理：查看、新建、编辑、删除 `knowledge` 下的 `.md/.txt`。
+- Skills 管理：查看、新建、编辑、删除 `skills/*/SKILL.md`。
+- Prompt 管理：查看、新建、编辑、删除 `prompts` 下的 `.md`。
+- 索引管理：增量构建和完整重建 `data/vector-store.json`。
+- 日志中心：查看每次 chat / embedding API 调用的输入、输出、耗时、唯一 id 和 session id。
+
+## LLM Call Logs
+
+大模型调用日志默认写入 `data/llm-call-logs.jsonl`，可以通过 `.env` 覆盖：
+
+```bash
+AGENT_LLM_LOG_PATH=data/llm-call-logs.jsonl
+```
+
+每条日志包含 `id`、`sessionId`、`type`、`model`、`endpoint`、`stream`、`startedAt`、`endedAt`、`durationMs`、`request`、`response` 和 `error`。当前实现是同步 HTTP 调用；日志结构已经保留 `sessionId` 和 `stream` 字段，后续接 SSE 时可以把同一次流式输出按同一个调用 id 或 session id 聚合。
+
 ## Incremental Indexing
 
 `/index` 会先读取旧的 `data/vector-store.json`。如果某个文件的 `sourceHash`、`embeddingModel` 和 `splitterVersion` 都没有变化，就直接复用旧 JSON 里的 embedding 向量；如果文件新增或修改，就重新切分并调用 embedding 模型；如果文件被删除，对应 records 会从新索引中移除。
@@ -75,11 +109,16 @@ src/main/java/com/example/agentlearn/
   cli/     命令行交互
   config/  环境变量配置
   llm/     OpenAI-compatible chat 和 embedding client
+  llm/logging/ LLM 调用日志记录
   mcp/     最小 stdio MCP client/server
   prompt/  Prompt 模板和组合
   rag/     Markdown 加载、chunk、向量库和检索
+  runtime/ CLI 和 Web 共用的 Agent 装配
   skill/   SKILL.md 加载和选择
   util/    轻量 JSON 工具
+  web/     JDK HttpServer 后台和管理 UI API
+src/main/resources/web/
+  原生 HTML/CSS/JS 管理台
 ```
 
 ## How The Pieces Fit

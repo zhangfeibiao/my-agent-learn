@@ -45,6 +45,14 @@ public final class PromptComposer {
 
         prompt.append("# User Question\n\n").append(userQuestion).append("\n\n");
         prompt.append("# Response Contract\n\n");
+        prompt.append("If the answer comes from retrieved knowledge context, answer directly. ");
+        prompt.append("You may summarize or synthesize retrieved chunks when that makes the answer clearer. ");
+        prompt.append("The JSON answer field must contain only the answer itself. ");
+        prompt.append("Do not include sources, citations, source filenames, source labels, or chunk ids in the answer field. ");
+        prompt.append("If retrieved knowledge context cannot answer the question, use the model's own general knowledge to answer. ");
+        prompt.append("Do not claim that fallback knowledge came from retrieved context. ");
+        prompt.append("Do not prefix the answer with phrases like \"According to the knowledge base\", \"Based on retrieved context\", \"根据知识库信息\", or \"根据资料\". ");
+        prompt.append("Do not include source filenames or source labels inside the answer text; the CLI displays sources separately. ");
         prompt.append("Return JSON: {\"type\":\"final\",\"answer\":\"...\"}. ");
         prompt.append("If a tool is required, return {\"type\":\"mcp_tool_call\",\"tool\":\"tool_name\",\"arguments\":{...}}.");
         return prompt.toString();
