@@ -1,6 +1,8 @@
 .tools/
 .m2/
 .env
+.superpowers/
 target/
 data/vector-store.json
+data/llm-call-logs.jsonl
 .DS_Store
